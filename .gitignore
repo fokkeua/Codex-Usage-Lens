@@ -1,0 +1,46 @@
+# macOS and editors
+.DS_Store
+._*
+.idea/
+.vscode/
+*.swp
+*~
+
+# Local AI/editor configuration
+.claude/
+.codex/
+
+# SwiftPM, Xcode, and build products
+.build/
+.swiftpm/
+DerivedData/
+build/
+outputs/
+tmp/
+work/
+.qa-scan-staging/
+*.app
+*.dSYM/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
+
+# Local logs and packaged artifacts
+*.log
+*.dmg
+*.pkg
+*.zip
+
+# Credentials and signing material
+.env
+.env.*
+!.env.example
+*.cer
+*.crt
+*.key
+*.mobileprovision
+*.p12
+*.pem
+
+# Design exploration; the final public icon is kept separately.
+Assets/IconVariants/

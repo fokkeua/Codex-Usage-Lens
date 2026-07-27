@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest an improvement to Codex Usage Lens.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight checks
+      options:
+        - label: I searched existing issues and documentation.
+          required: true
+        - label: The request does not require collecting prompts or credentials.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem should this change solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the user-visible result, not only an implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

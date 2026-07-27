@@ -1,0 +1,22 @@
+{
+  "records": [
+    {
+      "timestamp": "2026-07-26T08:40:00Z",
+      "model": "gpt-5.6-sol",
+      "input_tokens": 128400,
+      "cached_input_tokens": 48700,
+      "cache_write_tokens": 3200,
+      "output_tokens": 14800,
+      "source": "sample-export"
+    },
+    {
+      "timestamp": "2026-07-25T14:15:00Z",
+      "model": "gpt-5.6-terra",
+      "input_tokens": 84600,
+      "cached_input_tokens": 22100,
+      "cache_write_tokens": 2400,
+      "output_tokens": 9100,
+      "source": "sample-export"
+    }
+  ]
+}
