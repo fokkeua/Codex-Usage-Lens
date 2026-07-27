@@ -4,6 +4,8 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @EnvironmentObject private var store: UsageStore
     @EnvironmentObject private var languageController: AppLanguageController
+    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var launchAtLogin = LaunchAtLoginController()
     @State private var showsImporter = false
     @State private var showsClearUsageConfirmation = false
     @State private var pendingConfirmation: SettingsConfirmation?
@@ -84,7 +86,13 @@ struct SettingsView: View {
             Text(L10n.presentation(store.alertMessage ?? ""))
         }
         .task {
+            launchAtLogin.refresh()
             await refreshOTelState()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                launchAtLogin.refresh()
+            }
         }
     }
 
@@ -102,6 +110,27 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.menu)
                 .help("Интерфейс и форматы изменяются сразу")
+
+                Toggle(
+                    isOn: Binding(
+                        get: { launchAtLogin.state.isRequested },
+                        set: { launchAtLogin.setEnabled($0) }
+                    )
+                ) {
+                    Label(
+                        L10n.string("settings.launchAtLogin.title"),
+                        systemImage: "power"
+                    )
+                }
+                .disabled(
+                    launchAtLogin.isChanging
+                        || launchAtLogin.state == .unavailable
+                )
+                .accessibilityHint(
+                    L10n.string("settings.launchAtLogin.help")
+                )
+
+                launchAtLoginStatus
             }
 
             Section("Реальные данные Codex") {
@@ -189,6 +218,71 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private var launchAtLoginStatus: some View {
+        if let errorDescription = launchAtLogin.errorDescription {
+            Label {
+                Text(
+                    L10n.format(
+                        "settings.launchAtLogin.error",
+                        errorDescription
+                    )
+                )
+                .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill")
+            }
+            .font(.caption)
+            .foregroundStyle(Color.usageOrange)
+        } else {
+            switch launchAtLogin.state {
+            case .requiresApproval:
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        launchAtLoginApprovalNote
+                        openLoginItemsSettingsButton
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        launchAtLoginApprovalNote
+                        openLoginItemsSettingsButton
+                    }
+                }
+            case .unavailable:
+                Label {
+                    Text(
+                        L10n.string(
+                            "settings.launchAtLogin.unavailable"
+                        )
+                    )
+                    .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                }
+                .font(.caption)
+                .foregroundStyle(Color.usageOrange)
+            case .disabled, .enabled:
+                Text(L10n.string("settings.launchAtLogin.help"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var launchAtLoginApprovalNote: some View {
+        Text(L10n.string("settings.launchAtLogin.requiresApproval"))
+            .font(.caption)
+            .foregroundStyle(Color.usageOrange)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var openLoginItemsSettingsButton: some View {
+        Button(L10n.string("settings.launchAtLogin.openSettings")) {
+            launchAtLogin.openSystemSettings()
+        }
+        .buttonStyle(.link)
     }
 
     private var refreshActions: some View {

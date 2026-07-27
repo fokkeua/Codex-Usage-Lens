@@ -185,6 +185,12 @@
 "settings.pricing.subtitle" = "Preise in USD pro 1 Million Token. Ein abschließendes `*` im Muster kennzeichnet ein Präfix.";
 "settings.about.purpose" = "Die Anwendung liefert eine persönliche Schätzung der Codex-Arbeit in Token und ihres ungefähren Gegenwerts nach öffentlichen API-Preisen.";
 "settings.about.realNumbers" = "Codex app-server bietet die dokumentierte Methode account/usage/read mit aggregierten Token und Tageswerten für die Codex-Authentifizierung. Die Anwendung verwendet nur die stabile Protokolloberfläche und aktiviert keine experimentellen APIs. Die Aufteilung nach Modell und Eingabe/Ausgabe/Cache stammt aus lokalen token_count-Ereignissen und nach der Einrichtung aus dem dokumentierten OTel-Ereignis response.completed. Lokale rollout-Dateien dienen als experimentelle Ergänzung und können sich zwischen Codex-Versionen ändern.";
+"settings.launchAtLogin.title" = "Bei der Anmeldung öffnen";
+"settings.launchAtLogin.help" = "Startet Codex Usage Lens nach der Anmeldung an diesem Mac in der Menüleiste.";
+"settings.launchAtLogin.requiresApproval" = "In den macOS-Anmeldeobjekten ist eine Genehmigung erforderlich.";
+"settings.launchAtLogin.openSettings" = "Anmeldeobjekte öffnen…";
+"settings.launchAtLogin.unavailable" = "macOS konnte dieses Anmeldeobjekt nicht finden. Bewege die App in den Ordner Programme und öffne sie erneut.";
+"settings.launchAtLogin.error" = "Die Einstellung für den Start bei der Anmeldung konnte nicht geändert werden: %@";
 "otel.install.confirmation.message" = "Die Anwendung fügt einen verwalteten [otel]-Block zu ~/.codex/config.toml hinzu. Er sendet nur Token-Telemetrie an 127.0.0.1:4319, setzt log_user_prompt=false und lässt andere Einstellungen unverändert. Starte Codex danach vollständig neu.";
 "otel.install.note" = "config.toml enthält keinen [otel]-Abschnitt; ein verwalteter lokaler Export kann hinzugefügt werden.";
 "otel.legacy.note" = "Eine frühere verwaltete Codex Usage Lens-Konfiguration wurde gefunden. Sie wird nicht automatisch überschrieben: Entferne den alten Block manuell aus ~/.codex/config.toml und versuche es erneut.";

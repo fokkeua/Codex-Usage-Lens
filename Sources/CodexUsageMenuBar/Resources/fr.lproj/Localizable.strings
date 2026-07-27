@@ -185,6 +185,12 @@
 "settings.pricing.subtitle" = "Tarifs en USD par million de jetons. Un `*` final dans un motif indique un préfixe.";
 "settings.about.purpose" = "L’application fournit une estimation personnelle du travail de Codex en jetons et de son équivalent approximatif aux tarifs publics de l’API.";
 "settings.about.realNumbers" = "Codex app-server fournit la méthode documentée account/usage/read avec les jetons agrégés et des valeurs quotidiennes pour l’authentification Codex. L’application utilise uniquement la surface stable du protocole et n’active pas les API expérimentales. La ventilation modèle/entrée/sortie/cache provient des événements token_count locaux et, après configuration, de l’événement OTel documenté response.completed. Les fichiers rollout locaux servent de complément expérimental et peuvent changer entre les versions de Codex.";
+"settings.launchAtLogin.title" = "Ouvrir à la connexion";
+"settings.launchAtLogin.help" = "Lance Codex Usage Lens dans la barre des menus après votre connexion à ce Mac.";
+"settings.launchAtLogin.requiresApproval" = "Une autorisation est requise dans les Ouvertures de session de macOS.";
+"settings.launchAtLogin.openSettings" = "Ouvrir les Ouvertures de session…";
+"settings.launchAtLogin.unavailable" = "macOS ne trouve pas cet élément de connexion. Déplacez l’application dans Applications, puis rouvrez-la.";
+"settings.launchAtLogin.error" = "Impossible de modifier le lancement à la connexion : %@";
 "otel.install.confirmation.message" = "L’application ajoutera un bloc [otel] géré à ~/.codex/config.toml. Il envoie uniquement la télémétrie des jetons à 127.0.0.1:4319, définit log_user_prompt=false et ne modifie aucun autre réglage. Redémarrez ensuite complètement Codex.";
 "otel.install.note" = "Aucune section [otel] dans config.toml ; un export local géré peut être ajouté.";
 "otel.legacy.note" = "Une ancienne configuration gérée de Codex Usage Lens a été détectée. Elle n’est pas réécrite automatiquement : supprimez manuellement l’ancien bloc de ~/.codex/config.toml, puis réessayez.";

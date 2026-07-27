@@ -83,6 +83,18 @@ zsh scripts/package-release.sh
 
 See [Releasing](docs/RELEASING.md) for the full checklist.
 
+## Launch at login
+
+Enable **Settings → Data → Application → Open at login** to keep Codex Usage
+Lens available in the menu bar after signing in to the Mac. The app uses the
+native macOS Login Items service and links directly to System Settings if
+approval is required.
+
+This is also the recommended way to have the lens ready whenever Codex opens.
+macOS does not provide an unrelated app with a launch hook for Codex unless a
+separate helper is already running, so the app does not install a permanent
+Codex watcher.
+
 ## Data sources
 
 The app combines three sources:

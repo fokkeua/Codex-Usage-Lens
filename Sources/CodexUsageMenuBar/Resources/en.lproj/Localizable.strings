@@ -185,6 +185,12 @@
 "settings.pricing.subtitle" = "Rates in USD per 1 million tokens. A trailing `*` in a pattern denotes a prefix.";
 "settings.about.purpose" = "The application provides a personal estimate of Codex work in tokens and its approximate equivalent at public API prices.";
 "settings.about.realNumbers" = "Codex app-server provides the documented account/usage/read method with aggregate tokens and daily buckets for Codex-backed authentication. The application uses only the stable protocol surface and does not enable experimental APIs. Model and input/output/cache breakdowns come from local token_count events and, when configured, the documented OTel response.completed event. Local rollout files are used as an experimental backfill and may change between Codex versions.";
+"settings.launchAtLogin.title" = "Open at login";
+"settings.launchAtLogin.help" = "Starts Codex Usage Lens in the menu bar after you log in to this Mac.";
+"settings.launchAtLogin.requiresApproval" = "Approval is required in macOS Login Items.";
+"settings.launchAtLogin.openSettings" = "Open Login Items…";
+"settings.launchAtLogin.unavailable" = "macOS could not find this login item. Move the app to Applications and reopen it.";
+"settings.launchAtLogin.error" = "Couldn’t update the launch-at-login setting: %@";
 "otel.install.confirmation.message" = "The application will add a managed [otel] block to ~/.codex/config.toml. It sends only token telemetry to 127.0.0.1:4319, sets log_user_prompt=false, and leaves other settings unchanged. Restart Codex completely afterward.";
 "otel.install.note" = "There is no [otel] section in config.toml; a managed local export can be added.";
 "otel.legacy.note" = "A previous managed Codex Usage Lens configuration was found. It is not rewritten automatically: remove the old block manually from ~/.codex/config.toml, then try again.";

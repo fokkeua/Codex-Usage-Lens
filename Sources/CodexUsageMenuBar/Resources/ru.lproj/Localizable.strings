@@ -185,6 +185,12 @@
 "settings.pricing.subtitle" = "Ставки в USD за 1 миллион токенов. `*` в конце шаблона означает префикс.";
 "settings.about.purpose" = "Назначение приложения — личная оценка объёма работы Codex в токенах и его ориентировочного эквивалента по публичным API-ценам.";
 "settings.about.realNumbers" = "Codex app-server документированно предоставляет account/usage/read с суммарными токенами и дневными bucket-значениями для Codex-backed авторизации. Приложение использует только стабильную поверхность протокола и не включает experimental API. Модель и разбивка input/output/cache получаются из локальных token_count и, после настройки, из документированного OTel-события response.completed. Локальные rollout-файлы используются как экспериментальный backfill и могут измениться между версиями Codex.";
+"settings.launchAtLogin.title" = "Открывать при входе в macOS";
+"settings.launchAtLogin.help" = "Запускает Codex Usage Lens в строке меню после входа в учётную запись на этом Mac.";
+"settings.launchAtLogin.requiresApproval" = "Требуется разрешение в разделе «Объекты входа» macOS.";
+"settings.launchAtLogin.openSettings" = "Открыть «Объекты входа»…";
+"settings.launchAtLogin.unavailable" = "macOS не удалось найти объект входа. Переместите приложение в «Программы» и откройте его снова.";
+"settings.launchAtLogin.error" = "Не удалось изменить настройку автозапуска: %@";
 "otel.install.confirmation.message" = "Приложение добавит управляемый блок [otel] в ~/.codex/config.toml. Он отправляет только token telemetry на 127.0.0.1:4319, устанавливает log_user_prompt=false и не меняет остальные настройки. После добавления полностью перезапустите Codex.";
 "otel.install.note" = "В config.toml нет [otel]; можно добавить управляемый локальный экспорт.";
 "otel.legacy.note" = "Найдена прежняя управляемая настройка Codex Usage Lens. Приложение не переписывает её автоматически: удалите прежний блок вручную из ~/.codex/config.toml, затем повторите установку.";

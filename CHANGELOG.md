@@ -9,6 +9,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- A native macOS Login Item toggle in Settings for launching Codex Usage Lens
+  automatically after sign-in, including approval and error states.
 - Open-source project documentation and GitHub community files.
 - English, Ukrainian, and Russian README screenshots based on demo data.
 - A complete Ukrainian README.
