@@ -1,6 +1,6 @@
 # Codex Usage Lens
 
-[English](README.md)
+[English](README.md) · [Українська](README.uk.md)
 
 Нативное локальное macOS-приложение в строке меню для просмотра реального
 usage Codex и оценки его **API-equivalent** в USD.
@@ -9,6 +9,16 @@ API-equivalent — ориентировочная стоимость тех же
 API-ценам. Это не биллинг, не фактическое списание и не стоимость подписки.
 
 Текущая версия: **1.2 (build 6)**.
+
+## Скриншоты
+
+### Основной интерфейс
+
+![Основной интерфейс Codex Usage Lens на русском языке](docs/screenshots/ru/main-interface.png)
+
+### Дашборд
+
+![Дашборд Codex Usage Lens на русском языке](docs/screenshots/ru/dashboard.png)
 
 ## Быстрый запуск
 

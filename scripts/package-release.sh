@@ -176,7 +176,8 @@ for directory in Sources Tests Packaging scripts samples docs .github; do
     validate_safe_tree "$PROJECT_DIR/$directory" "source tree $directory"
 done
 for file in \
-    Package.swift README.md README.ru.md LICENSE CHANGELOG.md CONTRIBUTING.md \
+    Package.swift README.md README.uk.md README.ru.md LICENSE CHANGELOG.md \
+    CONTRIBUTING.md \
     CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md .gitignore .gitattributes \
     Assets/CodexUsageLens-AppIcon.png; do
     [[ -f "$PROJECT_DIR/$file" && ! -L "$PROJECT_DIR/$file" ]] \
@@ -376,7 +377,8 @@ for directory in Sources Tests Packaging scripts samples docs .github; do
         "$SOURCE_STAGING_DIR/$directory"
 done
 for file in \
-    Package.swift README.md README.ru.md LICENSE CHANGELOG.md CONTRIBUTING.md \
+    Package.swift README.md README.uk.md README.ru.md LICENSE CHANGELOG.md \
+    CONTRIBUTING.md \
     CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md .gitignore .gitattributes; do
     ditto --norsrc "$PROJECT_DIR/$file" "$SOURCE_STAGING_DIR/$file"
 done

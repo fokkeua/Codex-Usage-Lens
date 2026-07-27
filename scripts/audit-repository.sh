@@ -14,7 +14,7 @@ require_command() {
         || fail "required command is unavailable: $1"
 }
 
-for tool in git stat grep awk plutil zsh swift; do
+for tool in git stat grep strings awk plutil zsh swift; do
     require_command "$tool"
 done
 
@@ -25,9 +25,16 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
 [[ -n "$(git ls-files)" ]] || fail "the repository has no tracked files"
 
 for required_file in \
-    README.md README.ru.md LICENSE CHANGELOG.md CONTRIBUTING.md \
+    README.md README.uk.md README.ru.md LICENSE CHANGELOG.md CONTRIBUTING.md \
     CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md Package.swift \
-    docs/PRIVACY.md docs/RELEASING.md .github/workflows/ci.yml; do
+    docs/PRIVACY.md docs/RELEASING.md \
+    docs/screenshots/en/main-interface.png \
+    docs/screenshots/en/dashboard.png \
+    docs/screenshots/uk/main-interface.png \
+    docs/screenshots/uk/dashboard.png \
+    docs/screenshots/ru/main-interface.png \
+    docs/screenshots/ru/dashboard.png \
+    .github/workflows/ci.yml; do
     git ls-files --error-unmatch "$required_file" >/dev/null 2>&1 \
         || fail "required public file is not tracked: $required_file"
 done
@@ -98,6 +105,15 @@ for pattern in "${identity_patterns[@]}"; do
     fi
 done
 
+for screenshot in docs/screenshots/{en,uk,ru}/{main-interface,dashboard}.png; do
+    screenshot_metadata="$(strings "$screenshot")"
+    for pattern in "${secret_patterns[@]}" "${identity_patterns[@]}"; do
+        if print -r -- "$screenshot_metadata" | grep -E -q -- "$pattern"; then
+            fail "secret or personal metadata was found in $screenshot"
+        fi
+    done
+done
+
 plutil -lint Packaging/Info.plist >/dev/null
 plutil -convert json -o /dev/null Packaging/Assets.xcassets/Contents.json
 plutil -convert json -o /dev/null \
@@ -113,6 +129,9 @@ grep -F "Current version: **$app_version (build $app_build)**." \
 grep -F "Текущая версия: **$app_version (build $app_build)**." \
     README.ru.md >/dev/null \
     || fail "README.ru.md version does not match Packaging/Info.plist"
+grep -F "Поточна версія: **$app_version (build $app_build)**." \
+    README.uk.md >/dev/null \
+    || fail "README.uk.md version does not match Packaging/Info.plist"
 
 zsh -n scripts/*.sh
 swift package dump-package >/dev/null

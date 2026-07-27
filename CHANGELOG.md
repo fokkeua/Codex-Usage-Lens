@@ -10,8 +10,15 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Open-source project documentation and GitHub community files.
+- English, Ukrainian, and Russian README screenshots based on demo data.
+- A complete Ukrainian README.
 - Repository privacy and release audits.
 - GitHub Actions validation for supported macOS builds.
+
+### Fixed
+
+- All dashboard status text now refreshes immediately after changing the
+  application language.
 
 ## [1.2.0] - 2026-07-27
 

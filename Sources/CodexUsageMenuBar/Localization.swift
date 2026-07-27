@@ -480,5 +480,6 @@ struct LocalizedAppRoot<Content: View>: View {
         content()
             .environmentObject(languageController)
             .environment(\.locale, languageController.locale)
+            .id(languageController.resolvedLanguage.rawValue)
     }
 }

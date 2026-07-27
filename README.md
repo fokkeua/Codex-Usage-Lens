@@ -1,6 +1,6 @@
 # Codex Usage Lens
 
-[Русская версия](README.ru.md)
+[Українська](README.uk.md) · [Русская версия](README.ru.md)
 
 Codex Usage Lens is a native, local-first macOS menu bar app for inspecting
 Codex token usage and estimating its **API-equivalent** cost in USD.
@@ -10,7 +10,15 @@ Codex token usage and estimating its **API-equivalent** cost in USD.
 
 Current version: **1.2 (build 6)**.
 
-![Codex Usage Lens app icon](Assets/CodexUsageLens-AppIcon.png)
+## Screenshots
+
+### Menu bar overview
+
+![Codex Usage Lens menu bar overview in English](docs/screenshots/en/main-interface.png)
+
+### Dashboard
+
+![Codex Usage Lens dashboard in English](docs/screenshots/en/dashboard.png)
 
 ## Features
 
