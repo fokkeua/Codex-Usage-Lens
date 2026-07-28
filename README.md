@@ -8,6 +8,30 @@ Codex token usage and estimating its **API-equivalent** cost in USD.
 
 Current version: **1.3 (build 7)**.
 
+[![Download for Apple Silicon](https://img.shields.io/badge/Download-Apple%20Silicon-19A7AE?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/fokkeua/Codex-Usage-Lens/releases/latest/download/CodexUsageLens-app-arm64.zip)
+
+## Install on Apple Silicon
+
+1. Download the latest
+   [`CodexUsageLens-app-arm64.zip`](https://github.com/fokkeua/Codex-Usage-Lens/releases/latest/download/CodexUsageLens-app-arm64.zip).
+2. Unzip the archive and move **Codex Usage Lens.app** to **Applications**.
+3. Control-click the app, choose **Open**, then confirm **Open**.
+4. If macOS still blocks the app, open **System Settings → Privacy &
+   Security**, scroll to the security message, and choose **Open Anyway**.
+
+The release is ad-hoc signed and is intentionally not notarized by Apple, so
+the first-launch Gatekeeper warning is expected. After launch, the chart icon
+appears in the macOS menu bar.
+
+You can verify the download against
+[`SHA256SUMS`](https://github.com/fokkeua/Codex-Usage-Lens/releases/latest/download/SHA256SUMS):
+
+```bash
+shasum -a 256 ~/Downloads/CodexUsageLens-app-arm64.zip
+```
+
+[View all releases](https://github.com/fokkeua/Codex-Usage-Lens/releases).
+
 ## Screenshots
 
 ![Codex Usage Lens menu, dashboard, and settings](Assets/CodexUsageLens-Promo.png)
@@ -24,13 +48,16 @@ Current version: **1.3 (build 7)**.
 
 ## Requirements
 
+- an Apple Silicon Mac;
 - macOS 14 or newer;
-- Xcode Command Line Tools or Xcode with Swift 6;
 - Codex installed and authenticated for official account usage.
 
 The project has no third-party Swift package dependencies.
 
-## Quick start
+## Build from source
+
+Building from source additionally requires Xcode Command Line Tools or Xcode
+with Swift 6.
 
 ```bash
 # After cloning the repository:
@@ -64,16 +91,9 @@ For an ad-hoc signed local QA archive:
 ALLOW_UNNOTARIZED_RELEASE=1 zsh scripts/package-release.sh
 ```
 
-For public distribution, use a Developer ID Application certificate and
-notarize the result:
-
-```bash
-CODE_SIGN_IDENTITY="Developer ID Application: ..." \
-NOTARY_PROFILE="codex-usage-lens" \
-zsh scripts/package-release.sh
-```
-
-See [Releasing](docs/RELEASING.md) for the full checklist.
+Pushing a matching version tag such as `v1.3.0` runs the release workflow and
+publishes the Apple Silicon ZIP, source ZIP, and checksums automatically. See
+[Releasing](docs/RELEASING.md) for the maintainer checklist.
 
 ## Launch at login
 

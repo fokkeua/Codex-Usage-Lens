@@ -29,7 +29,7 @@ for required_file in \
     CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md Package.swift \
     docs/PRIVACY.md docs/RELEASING.md \
     Assets/CodexUsageLens-Promo.png \
-    .github/workflows/ci.yml; do
+    .github/workflows/ci.yml .github/workflows/release.yml; do
     git ls-files --error-unmatch "$required_file" >/dev/null 2>&1 \
         || fail "required public file is not tracked: $required_file"
 done
