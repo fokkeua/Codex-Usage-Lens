@@ -2,12 +2,19 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
+    private enum SettingsTab: Hashable {
+        case data
+        case pricing
+        case about
+    }
+
     @EnvironmentObject private var store: UsageStore
     @EnvironmentObject private var languageController: AppLanguageController
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var launchAtLogin = LaunchAtLoginController()
     @State private var showsImporter = false
     @State private var showsClearUsageConfirmation = false
+    @State private var selectedTab: SettingsTab = .data
     @State private var pendingConfirmation: SettingsConfirmation?
     @State private var otelState: OTelSettingsState =
         .unavailable(L10n.string("otel.checking"))
@@ -20,25 +27,19 @@ struct SettingsView: View {
                     .padding(.top, 12)
             }
 
-            TabView {
-                dataSettings
-                    .tabItem {
-                        Label("Данные", systemImage: "externaldrive")
-                    }
-                pricingSettings
-                    .tabItem {
-                        Label("Цены", systemImage: "dollarsign.circle")
-                    }
-                aboutSettings
-                    .tabItem {
-                        Label("О приложении", systemImage: "info.circle")
-                    }
-            }
+            settingsTabBar
+                .padding(.vertical, 10)
+
+            Divider()
+
+            selectedSettingsView
         }
         .frame(
             minWidth: SettingsLayout.minimumWindowSize.width,
             minHeight: SettingsLayout.minimumWindowSize.height
         )
+        .font(.system(size: 12))
+        .codexWindowSurface()
         .confirmationDialog(
             pendingConfirmation?.title ?? "",
             isPresented: pendingConfirmationIsPresented,
@@ -96,9 +97,84 @@ struct SettingsView: View {
         }
     }
 
+    private var settingsTabBar: some View {
+        HStack(spacing: 4) {
+            settingsTabButton(
+                .data,
+                title: "Данные",
+                icon: "externaldrive"
+            )
+            settingsTabButton(
+                .pricing,
+                title: "Цены",
+                icon: "dollarsign.circle"
+            )
+            settingsTabButton(
+                .about,
+                title: "О приложении",
+                icon: "info.circle"
+            )
+        }
+        .padding(4)
+        .background(
+            Color.primary.opacity(0.04),
+            in: RoundedRectangle(
+                cornerRadius: 9,
+                style: .continuous
+            )
+        )
+    }
+
+    private func settingsTabButton(
+        _ tab: SettingsTab,
+        title: String,
+        icon: String
+    ) -> some View {
+        Button {
+            selectedTab = tab
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.codexAccent)
+                Text(L10n.string(title))
+                    .font(CodexVisualStyle.rowTitleFont)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .background(
+                selectedTab == tab
+                    ? Color.primary.opacity(0.09)
+                    : Color.clear,
+                in: RoundedRectangle(
+                    cornerRadius: CodexVisualStyle.controlCornerRadius,
+                    style: .continuous
+                )
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(
+            selectedTab == tab ? .isSelected : []
+        )
+    }
+
+    @ViewBuilder
+    private var selectedSettingsView: some View {
+        switch selectedTab {
+        case .data:
+            dataSettings
+        case .pricing:
+            pricingSettings
+        case .about:
+            aboutSettings
+        }
+    }
+
     private var dataSettings: some View {
         Form {
-            Section("Приложение") {
+            Section {
                 Picker(
                     "Язык приложения",
                     selection: $languageController.selection
@@ -131,9 +207,11 @@ struct SettingsView: View {
                 )
 
                 launchAtLoginStatus
+            } header: {
+                settingsSectionHeader("Приложение", icon: "gearshape")
             }
 
-            Section("Реальные данные Codex") {
+            Section {
                 LabeledContent {
                     Text(store.sourceKind.title)
                 } label: {
@@ -168,9 +246,14 @@ struct SettingsView: View {
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            } header: {
+                settingsSectionHeader(
+                    "Реальные данные Codex",
+                    icon: "externaldrive"
+                )
             }
 
-            Section("Live OpenTelemetry") {
+            Section {
                 LabeledContent("Локальный receiver") {
                     HStack(spacing: 6) {
                         Circle()
@@ -187,13 +270,23 @@ struct SettingsView: View {
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            } header: {
+                settingsSectionHeader(
+                    "Live OpenTelemetry",
+                    icon: "waveform.path.ecg"
+                )
             }
 
-            Section("Импорт и резервные данные") {
+            Section {
                 importAndBackupActions
+            } header: {
+                settingsSectionHeader(
+                    "Импорт и резервные данные",
+                    icon: "square.and.arrow.down"
+                )
             }
 
-            Section("Поддерживаемая схема импорта") {
+            Section {
                 Text(
                     L10n.string("settings.import.schema")
                 )
@@ -203,9 +296,14 @@ struct SettingsView: View {
                     L10n.string("settings.import.otelSchema")
                 )
                 .foregroundStyle(.secondary)
+            } header: {
+                settingsSectionHeader(
+                    "Поддерживаемая схема импорта",
+                    icon: "doc.text"
+                )
             }
 
-            Section("Приватность") {
+            Section {
                 Label(
                     L10n.string("settings.privacy.local"),
                     systemImage: "lock.shield"
@@ -214,10 +312,29 @@ struct SettingsView: View {
                     L10n.string("settings.privacy.sessions"),
                     systemImage: "hand.raised"
                 )
+            } header: {
+                settingsSectionHeader("Приватность", icon: "lock.shield")
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
         .padding(.top, 8)
+    }
+
+    private func settingsSectionHeader(
+        _ title: String,
+        icon: String
+    ) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.codexAccent)
+                .frame(width: 16)
+            Text(L10n.string(title))
+                .font(CodexVisualStyle.sectionTitleFont)
+                .foregroundStyle(.primary)
+        }
     }
 
     @ViewBuilder
@@ -325,8 +442,10 @@ struct SettingsView: View {
     }
 
     private var syncAccountButton: some View {
-        Button("Официальный итог") {
+        Button {
             store.syncAccountUsage()
+        } label: {
+            Label("Официальный итог", systemImage: "checkmark.circle")
         }
         .disabled(
             store.isSyncingAccount || !store.canMutatePersistedState
@@ -335,8 +454,10 @@ struct SettingsView: View {
     }
 
     private var scanHistoryButton: some View {
-        Button("Сканировать историю") {
+        Button {
             store.scanLocalHistory()
+        } label: {
+            Label("Сканировать историю", systemImage: "magnifyingglass")
         }
         .disabled(
             store.isScanningLocal || !store.canMutatePersistedState
@@ -360,9 +481,11 @@ struct SettingsView: View {
     }
 
     private func otelConfigurationButton(state: OTelSettingsState) -> some View {
-        Button(state.buttonTitle) {
+        Button {
             guard let action = state.action else { return }
             pendingConfirmation = .otel(action)
+        } label: {
+            Label(state.buttonTitle, systemImage: "waveform.path.ecg")
         }
         .disabled(
             state.action == nil || !store.canMutatePersistedState
@@ -401,22 +524,31 @@ struct SettingsView: View {
     }
 
     private var importButton: some View {
-        Button("Импортировать JSON / JSONL / CSV…") {
+        Button {
             showsImporter = true
+        } label: {
+            Label(
+                "Импортировать JSON / JSONL / CSV…",
+                systemImage: "square.and.arrow.down"
+            )
         }
         .disabled(!store.canMutatePersistedState)
     }
 
     private var demoButton: some View {
-        Button("Загрузить демо") {
+        Button {
             store.loadDemoData()
+        } label: {
+            Label("Загрузить демо", systemImage: "sparkles")
         }
         .disabled(!store.canMutatePersistedState)
     }
 
     private var clearUsageButton: some View {
-        Button("Очистить", role: .destructive) {
+        Button(role: .destructive) {
             showsClearUsageConfirmation = true
+        } label: {
+            Label("Очистить", systemImage: "trash")
         }
         .disabled(
             store.records.isEmpty || !store.canMutatePersistedState
@@ -446,8 +578,8 @@ struct SettingsView: View {
         ScrollView(SettingsLayout.pricingScrollAxes) {
             pricingSettingsContent
                 .frame(maxWidth: .infinity, alignment: .topLeading)
-                .padding(.horizontal, 22)
-                .padding(.vertical, 20)
+                .padding(.horizontal, CodexVisualStyle.windowPadding)
+                .padding(.vertical, CodexVisualStyle.windowPadding)
         }
         .scrollBounceBehavior(.basedOnSize)
     }
@@ -463,7 +595,7 @@ struct SettingsView: View {
                         .accessibilityHidden(true)
                 } else {
                     Image(systemName: "clock.arrow.circlepath")
-                        .foregroundStyle(Color.usageBlue)
+                        .foregroundStyle(Color.codexAccent)
                         .accessibilityHidden(true)
                 }
 
@@ -489,11 +621,11 @@ struct SettingsView: View {
             if store.prices.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "tag.slash")
-                        .font(.system(size: 26, weight: .medium))
+                        .font(.system(size: 22, weight: .medium))
                         .foregroundStyle(.tertiary)
                         .accessibilityHidden(true)
                     Text("Таблица цен пуста")
-                        .font(.headline)
+                        .font(CodexVisualStyle.sectionTitleFont)
                     Text(
                         "Добавьте модель вручную или восстановите встроенные цены."
                     )
@@ -502,18 +634,7 @@ struct SettingsView: View {
                     .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, minHeight: 132)
-                .padding(18)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color(nsColor: .controlBackgroundColor))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(
-                            Color.primary.opacity(0.08),
-                            style: StrokeStyle(lineWidth: 1, dash: [5, 4])
-                        )
-                )
+                .codexPanel(padding: 18)
             } else {
                 LazyVStack(spacing: 12) {
                     ForEach(store.prices) { price in
@@ -542,9 +663,9 @@ struct SettingsView: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(Color.usageOrange)
                     .accessibilityHidden(true)
-            Text(
-                L10n.string("settings.pricing.disclaimer")
-            )
+                Text(
+                    L10n.string("settings.pricing.disclaimer")
+                )
                 .fixedSize(horizontal: false, vertical: true)
             }
             .font(.caption)
@@ -660,17 +781,16 @@ struct SettingsView: View {
 
             priceRateFields(price, modelName: modelName)
         }
-        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
-        )
+        .codexPanel()
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(
+                cornerRadius: CodexVisualStyle.panelCornerRadius,
+                style: .continuous
+            )
                 .stroke(
                     warning == nil
-                        ? Color.primary.opacity(0.08)
+                        ? Color.clear
                         : Color.usageOrange.opacity(0.34)
                 )
         )
@@ -792,16 +912,11 @@ struct SettingsView: View {
     }
 
     private var pricingTitle: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text("Публичные API-цены")
-                .font(.title2.bold())
-            Text(
-                L10n.string("settings.pricing.subtitle")
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-        }
+        CodexSectionHeading(
+            "Публичные API-цены",
+            subtitle: L10n.string("settings.pricing.subtitle"),
+            systemImage: "dollarsign.circle"
+        )
     }
 
     private var pricingActions: some View {
@@ -982,27 +1097,33 @@ struct SettingsView: View {
     private var aboutSettings: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                HStack(spacing: 14) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [.usageBlue, .usagePurple],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                HStack(spacing: 12) {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(.system(size: 22, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(Color.codexAccent)
+                        .frame(width: 52, height: 52)
+                        .background(
+                            Color.primary.opacity(0.045),
+                            in: RoundedRectangle(
+                                cornerRadius: 12,
+                                style: .continuous
                             )
-                        Image(systemName: "chart.bar.xaxis")
-                            .font(.system(size: 32, weight: .semibold))
-                            .foregroundStyle(.white)
-                    }
-                    .frame(width: 72, height: 72)
-                    .accessibilityHidden(true)
+                        )
+                        .overlay {
+                            RoundedRectangle(
+                                cornerRadius: 12,
+                                style: .continuous
+                            )
+                            .stroke(Color.primary.opacity(0.08))
+                        }
+                        .accessibilityHidden(true)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Codex Usage Lens")
-                            .font(.title.bold())
-                        Text("Локальное macOS-приложение • версия 1.2")
+                            .font(.system(size: 20, weight: .semibold))
+                        Text("Локальное macOS-приложение • версия 1.3")
+                            .font(CodexVisualStyle.captionFont)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -1013,13 +1134,17 @@ struct SettingsView: View {
                     L10n.string("settings.about.purpose")
                 )
 
-                GroupBox("Как получаются реальные числа") {
+                VStack(alignment: .leading, spacing: 8) {
+                    CodexSectionHeading(
+                        "Как получаются реальные числа",
+                        systemImage: "info.circle"
+                    )
                     Text(
                         L10n.string("settings.about.realNumbers")
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 4)
                 }
+                .codexPanel()
 
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 12) {
@@ -1031,7 +1156,7 @@ struct SettingsView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .padding(24)
+            .padding(CodexVisualStyle.windowPadding)
         }
         .scrollBounceBehavior(.basedOnSize)
     }
@@ -1039,15 +1164,15 @@ struct SettingsView: View {
     @ViewBuilder
     private var documentationLinks: some View {
         Link(
-            "Документация Codex OTel",
             destination: URL(
                 string: "https://learn.chatgpt.com/docs/config-file/config-advanced#observability-and-telemetry"
             )!
-        )
-        Link(
-            "Сравнение API-цен",
-            destination: Pricing.officialPricingURL
-        )
+        ) {
+            Label("Документация Codex OTel", systemImage: "doc.text")
+        }
+        Link(destination: Pricing.officialPricingURL) {
+            Label("Сравнение API-цен", systemImage: "dollarsign.circle")
+        }
     }
 
     private func statusText(_ text: String, active: Bool) -> some View {

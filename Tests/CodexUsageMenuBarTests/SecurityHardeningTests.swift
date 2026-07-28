@@ -1782,7 +1782,7 @@ func appServerInitializeVersionIsCurrent() throws {
     let request = CodexAppServerClient.initializeRequest()
     let params = try #require(request["params"] as? [String: Any])
     let clientInfo = try #require(params["clientInfo"] as? [String: Any])
-    #expect(clientInfo["version"] as? String == "1.2.0")
+    #expect(clientInfo["version"] as? String == "1.3.0")
 }
 
 @Test("Process cleanup escalates from ignored SIGTERM to SIGKILL")

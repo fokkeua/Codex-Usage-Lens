@@ -146,6 +146,85 @@ func decodesAccountUsage() throws {
     #expect(value.dailyUsageBuckets?.first?.tokens == 91_739_553)
 }
 
+@Test("Декодируются профиль, недельный лимит и reset credits")
+func decodesAccountRateLimits() throws {
+    let profile = try CodexAppServerClient.decodeAccountProfile(from: [
+        "requiresOpenaiAuth": true,
+        "account": [
+            "type": "chatgpt",
+            "email": "user@account",
+            "planType": "pro",
+        ],
+    ])
+    #expect(profile?.email == "user@account")
+    #expect(profile?.planType == "pro")
+
+    let bucket: [String: Any] = [
+        "credits": [
+            "hasCredits": true,
+            "unlimited": false,
+            "balance": "2500",
+        ],
+        "individualLimit": NSNull(),
+        "limitId": "codex",
+        "limitName": "Codex",
+        "planType": "pro",
+        "primary": [
+            "usedPercent": 47,
+            "windowDurationMins": 10_080,
+            "resetsAt": 1_786_000_000,
+        ],
+        "rateLimitReachedType": NSNull(),
+        "secondary": NSNull(),
+        "spendControlReached": false,
+    ]
+    let limits = try CodexAppServerClient.decodeRateLimits(from: [
+        "rateLimits": bucket,
+        "rateLimitsByLimitId": ["codex": bucket],
+        "rateLimitResetCredits": [
+            "availableCount": 2,
+            "credits": [[
+                "description": "Weekly reset",
+                "expiresAt": 1_786_000_000,
+                "grantedAt": 1_785_000_000,
+                "id": "credit-1",
+                "resetType": "codexRateLimits",
+                "status": "available",
+                "title": "Reset",
+            ]],
+        ],
+    ])
+
+    #expect(limits.preferredBucket.primary?.usedPercent == 47)
+    #expect(limits.preferredBucket.credits?.balance == "2500")
+    #expect(limits.rateLimitResetCredits?.availableCount == 2)
+    #expect(
+        limits.rateLimitResetCredits?.credits?.first?.id == "credit-1"
+    )
+}
+
+@Test("Тариф Codex из лимитов приоритетнее общей метки аккаунта")
+func presentsCurrentCodexPlanFromRateLimits() {
+    #expect(
+        CodexPlanPresentation.displayName(
+            profilePlanType: "plus",
+            rateLimitPlanType: "prolite"
+        ) == "Pro 5x"
+    )
+    #expect(
+        CodexPlanPresentation.displayName(
+            profilePlanType: "plus",
+            rateLimitPlanType: "pro"
+        ) == "Pro 20x"
+    )
+    #expect(
+        CodexPlanPresentation.displayName(
+            profilePlanType: "plus",
+            rateLimitPlanType: nil
+        ) == "Plus"
+    )
+}
+
 @Test("App-server запускается без opt-in в experimental API")
 func initializesAppServerWithStableSurfaceOnly() throws {
     let request = CodexAppServerClient.initializeRequest()

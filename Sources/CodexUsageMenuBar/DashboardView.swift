@@ -42,7 +42,10 @@ struct DashboardView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(
+                alignment: .leading,
+                spacing: CodexVisualStyle.sectionSpacing
+            ) {
                 if let message = store.persistenceReadOnlyMessage {
                     PersistenceReadOnlyBanner(message: message)
                 }
@@ -63,9 +66,9 @@ struct DashboardView: View {
                 dailyTable
                 disclaimer
             }
-            .padding(24)
+            .padding(CodexVisualStyle.windowPadding)
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .codexWindowSurface()
         .frame(minWidth: 900, minHeight: 650)
         .navigationTitle("Codex Usage Lens")
         .onChange(of: selectedDays) {
@@ -92,21 +95,20 @@ struct DashboardView: View {
     private var headerCopy: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Использование Codex")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .font(CodexVisualStyle.windowTitleFont)
             Text("Токены, модели и ориентировочная стоимость по публичным API-ценам")
-                .font(.subheadline)
+                .font(CodexVisualStyle.captionFont)
                 .foregroundStyle(.secondary)
             Label(periodRange, systemImage: "calendar")
-                .font(.caption.weight(.medium))
+                .font(CodexVisualStyle.captionFont.weight(.medium))
                 .foregroundStyle(.secondary)
         }
     }
 
     private var periodSelector: some View {
         VStack(alignment: .trailing, spacing: 7) {
-            Text("ПЕРИОД АНАЛИЗА")
-                .font(.caption2.weight(.semibold))
-                .tracking(0.8)
+            Text("Период анализа")
+                .font(CodexVisualStyle.captionFont.weight(.medium))
                 .foregroundStyle(.secondary)
                 .fixedSize()
             Picker("", selection: $selectedDays) {
@@ -117,7 +119,7 @@ struct DashboardView: View {
             }
             .labelsHidden()
             .pickerStyle(.segmented)
-            .frame(width: 360)
+            .frame(width: 320)
             .fixedSize(horizontal: true, vertical: false)
             .accessibilityLabel("Период анализа")
         }
@@ -127,16 +129,15 @@ struct DashboardView: View {
     private var sourceReconciliation: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Полнота данных")
-                        .font(.title3.bold())
-                    Text("Официальный итог показывает масштаб, локальные записи — разбивку по дням и моделям.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                CodexSectionHeading(
+                    "Полнота данных",
+                    subtitle:
+                        "Официальный итог показывает масштаб, локальные записи — разбивку по дням и моделям.",
+                    systemImage: "checkmark.seal"
+                )
                 Spacer()
                 Label(store.sourceKind.title, systemImage: "externaldrive")
-                    .font(.caption.weight(.medium))
+                    .font(CodexVisualStyle.captionFont.weight(.medium))
                     .lineLimit(1)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -241,13 +242,12 @@ struct DashboardView: View {
 
     private var summaryCards: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("За выбранный период")
-                    .font(.title3.bold())
-                Text("\(periodRange) • \(UsageFormatting.responses(periodSummary.recordCount))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            CodexSectionHeading(
+                "За выбранный период",
+                subtitle:
+                    "\(periodRange) • \(UsageFormatting.responses(periodSummary.recordCount))",
+                systemImage: "clock"
+            )
 
             LazyVGrid(
                 columns: [
@@ -263,8 +263,7 @@ struct DashboardView: View {
                         "dashboard.metric.exact",
                         UsageFormatting.fullTokens(periodSummary.totalTokens)
                     ),
-                    icon: "sum",
-                    tint: .usageBlue
+                    icon: "sum"
                 )
                 DashboardMetricCard(
                     title: "Входные токены",
@@ -273,15 +272,13 @@ struct DashboardView: View {
                         "dashboard.metric.cached",
                         UsageFormatting.tokens(periodSummary.cachedInputTokens)
                     ),
-                    icon: "arrow.down.left",
-                    tint: .usageTeal
+                    icon: "arrow.down.left"
                 )
                 DashboardMetricCard(
                     title: "Выходные токены",
                     value: UsageFormatting.tokens(periodSummary.outputTokens),
                     detail: "Ответы модели, включая reasoning",
-                    icon: "arrow.up.right",
-                    tint: .usagePurple
+                    icon: "arrow.up.right"
                 )
                 DashboardMetricCard(
                     title: "Оценка по API-ценам",
@@ -292,8 +289,7 @@ struct DashboardView: View {
                             "dashboard.metric.unpriced",
                             periodSummary.unpricedRecords
                         ),
-                    icon: "dollarsign",
-                    tint: .usageOrange
+                    icon: "dollarsign"
                 )
             }
         }
@@ -301,15 +297,11 @@ struct DashboardView: View {
 
     private var usageChart: some View {
         VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Расход токенов по дням")
-                    .font(.title3.bold())
-                Text(
-                    L10n.string("dashboard.chart.explanation")
-                )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            CodexSectionHeading(
+                "Расход токенов по дням",
+                subtitle: L10n.string("dashboard.chart.explanation"),
+                systemImage: "chart.bar.xaxis"
+            )
 
             if dailyRows.isEmpty {
                 ContentUnavailableView(
@@ -688,13 +680,11 @@ struct DashboardView: View {
 
     private var modelBreakdown: some View {
         VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Модели")
-                    .font(.title3.bold())
-                Text("Доля каждой модели в выбранном периоде")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            CodexSectionHeading(
+                "Модели",
+                subtitle: "Доля каждой модели в выбранном периоде",
+                systemImage: "cpu"
+            )
 
             if modelRows.isEmpty {
                 Text("Нет данных")
@@ -767,13 +757,11 @@ struct DashboardView: View {
 
     private var tokenComposition: some View {
         VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Из чего состоят токены")
-                    .font(.title3.bold())
-                Text("Вход, кэш и выход в общем объёме")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            CodexSectionHeading(
+                "Из чего состоят токены",
+                subtitle: "Вход, кэш и выход в общем объёме",
+                systemImage: "square.stack.3d.up"
+            )
 
             compositionBar
 
@@ -884,13 +872,12 @@ struct DashboardView: View {
     private var dailyTable: some View {
         let rows = snapshot.dailyTotals
         return VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Дневная детализация")
-                    .font(.title3.bold())
-                Text("Точные значения по каждому дню; новые даты находятся сверху.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            CodexSectionHeading(
+                "Дневная детализация",
+                subtitle:
+                    "Точные значения по каждому дню; новые даты находятся сверху.",
+                systemImage: "calendar"
+            )
 
             if rows.isEmpty {
                 Text("За выбранный период записей нет.")
@@ -953,7 +940,7 @@ struct DashboardView: View {
             )
         } icon: {
             Image(systemName: "info.circle.fill")
-                .foregroundStyle(Color.usageBlue)
+                .foregroundStyle(Color.codexAccent)
         }
         .font(.caption)
         .foregroundStyle(.secondary)
@@ -1192,7 +1179,7 @@ private struct UsageChartTooltip: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(UsageFormatting.tokens(segment.summary.totalTokens))
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .font(CodexVisualStyle.metricFont)
                     .monospacedDigit()
                 Text(
                     L10n.format(
@@ -1250,33 +1237,37 @@ private struct DataStatusMetric: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(L10n.presentation(title), systemImage: icon)
-                .font(.callout.weight(.semibold))
-                .foregroundStyle(.primary)
-                .symbolRenderingMode(.hierarchical)
-                .symbolVariant(.fill)
-                .tint(tint)
+            HStack(spacing: 7) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(tint)
+                    .frame(width: 14)
+                    .accessibilityHidden(true)
+                Text(L10n.presentation(title))
+                    .font(CodexVisualStyle.rowTitleFont)
+            }
 
             HStack(alignment: .firstTextBaseline, spacing: 7) {
                 Text(value)
-                    .font(.system(size: 23, weight: .bold, design: .rounded))
+                    .font(CodexVisualStyle.metricFont)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
                     .monospacedDigit()
                 Text(L10n.presentation(unit))
-                    .font(.caption)
+                    .font(CodexVisualStyle.captionFont)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
 
             Text(L10n.presentation(detail))
-                .font(.caption)
+                .font(CodexVisualStyle.captionFont)
                 .foregroundStyle(.secondary)
                 .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, minHeight: 82, alignment: .topLeading)
-        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, minHeight: 76, alignment: .topLeading)
+        .padding(.horizontal, 14)
     }
 }
 
@@ -1285,57 +1276,40 @@ private struct DashboardMetricCard: View {
     let value: String
     let detail: String
     let icon: String
-    let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center) {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .center, spacing: 7) {
                 Image(systemName: icon)
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(tint)
-                    .frame(width: 30, height: 30)
-                    .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 9))
-                Spacer(minLength: 8)
+                    .font(.system(size: 12, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.codexAccent)
+                    .frame(width: 14)
+                    .accessibilityHidden(true)
                 Text(L10n.string(title))
-                    .font(.caption.weight(.medium))
+                    .font(CodexVisualStyle.rowTitleFont)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.trailing)
                     .lineLimit(2)
+                Spacer(minLength: 8)
             }
             Text(value)
-                .font(.system(size: 28, weight: .semibold, design: .rounded))
+                .font(CodexVisualStyle.metricFont)
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
                 .monospacedDigit()
             Text(L10n.string(detail))
-                .font(.caption)
+                .font(CodexVisualStyle.captionFont)
                 .foregroundStyle(.secondary)
                 .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(15)
-        .frame(maxWidth: .infinity, minHeight: 124, alignment: .topLeading)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(tint.opacity(0.14))
-        )
+        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
+        .codexPanel(padding: 14)
     }
 }
 
 private extension View {
     func dashboardPanel() -> some View {
-        padding(18)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.primary.opacity(0.07))
-            )
+        codexPanel()
     }
 }

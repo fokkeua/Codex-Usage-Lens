@@ -6,8 +6,7 @@ This checklist covers a source release and an optional signed macOS binary.
 
 1. Update `CFBundleShortVersionString` and `CFBundleVersion` in
    `Packaging/Info.plist`.
-2. Update the version shown in `README.md`, `README.uk.md`, and
-   `README.ru.md`.
+2. Update the version shown in `README.md`.
 3. Move relevant entries from `CHANGELOG.md` into a dated release section.
 
 ## 2. Audit the source tree

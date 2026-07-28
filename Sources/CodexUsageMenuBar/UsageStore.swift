@@ -113,6 +113,8 @@ final class UsageStore: ObservableObject {
             noteExternalPersistedMutation()
         }
     }
+    @Published private(set) var accountProfile: CodexAccountProfile?
+    @Published private(set) var rateLimits: CodexRateLimitsSnapshot?
     @Published var knownModels: [CodexModelInfo] = [] {
         didSet {
             guard !isRevertingRejectedMutation else { return }
@@ -138,6 +140,10 @@ final class UsageStore: ObservableObject {
     @Published var isScanningLocal = false
     @Published var isUpdatingPrices = false
     @Published var isLiveReceiverRunning = false
+    @Published private(set) var serviceStatus: OpenAIServiceStatus?
+    @Published private(set) var isRefreshingServiceStatus = false
+    @Published private(set) var serviceStatusError: String?
+    @Published private(set) var isConsumingResetCredit = false
     @Published private(set) var accountSyncHasError = false
     @Published private(set) var localScanHasError = false
     @Published private(set) var priceUpdateHasError = false
@@ -314,10 +320,15 @@ final class UsageStore: ObservableObject {
             of: persistedState()
         )
         hasCompletedInitialization = true
-        guard autoRefreshRealData, canPersist else { return }
+        guard autoRefreshRealData else { return }
         DispatchQueue.main.async { [weak self] in
-            self?.startLiveReceiver()
-            self?.refreshRealData()
+            guard let self else { return }
+            if self.canPersist {
+                self.startLiveReceiver()
+                self.refreshRealData()
+            } else {
+                self.refreshServiceStatus()
+            }
         }
     }
 
@@ -326,7 +337,10 @@ final class UsageStore: ObservableObject {
     }
 
     var isRefreshing: Bool {
-        isSyncingAccount || isScanningLocal || isUpdatingPrices
+        isSyncingAccount
+            || isScanningLocal
+            || isUpdatingPrices
+            || isConsumingResetCredit
     }
 
     var canPersist: Bool {
@@ -441,10 +455,59 @@ final class UsageStore: ObservableObject {
     }
 
     func refreshRealData() {
+        refreshServiceStatus()
         guard requireWritablePersistence() else { return }
         syncAccountUsage()
         scanLocalHistory()
         updateOfficialPrices(force: false)
+    }
+
+    func refreshServiceStatus() {
+        guard !isRefreshingServiceStatus else { return }
+        isRefreshingServiceStatus = true
+        serviceStatusError = nil
+        OpenAIStatusClient.fetch { [weak self] result in
+            guard let self else { return }
+            self.isRefreshingServiceStatus = false
+            switch result {
+            case .success(let status):
+                self.serviceStatus = status
+            case .failure(let error):
+                self.serviceStatusError = error.localizedDescription
+            }
+        }
+    }
+
+    func consumeRateLimitResetCredit(creditID: String? = nil) {
+        guard requireWritablePersistence() else { return }
+        guard !isConsumingResetCredit else { return }
+        isConsumingResetCredit = true
+        CodexResetCreditClient.consume(
+            creditID: creditID
+        ) { [weak self] result in
+            guard let self else { return }
+            self.isConsumingResetCredit = false
+            switch result {
+            case .success(.reset):
+                self.alertMessage =
+                    "Reset credit применён. Лимит Codex обновляется."
+                self.syncAccountUsage()
+            case .success(.alreadyRedeemed):
+                self.alertMessage =
+                    "Этот reset credit уже был применён."
+                self.syncAccountUsage()
+            case .success(.nothingToReset):
+                self.alertMessage =
+                    "Сейчас нет окна лимита, которое можно сбросить."
+            case .success(.noCredit):
+                self.alertMessage =
+                    "Доступных reset credits больше нет."
+            case .failure(let error):
+                self.alertMessage =
+                    "Не удалось применить reset credit: "
+                    + error.localizedDescription
+            }
+        }
     }
 
     func syncAccountUsage() {
@@ -511,6 +574,8 @@ final class UsageStore: ObservableObject {
                     guard let self else { return }
                     self.accountUsage = value.usage
                     self.knownModels = value.models
+                    self.accountProfile = value.profile
+                    self.rateLimits = value.rateLimits
                     self.isSyncingAccount = false
                     self.accountSyncHasError = false
                     self.accountSyncStatus =

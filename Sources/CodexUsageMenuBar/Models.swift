@@ -710,6 +710,108 @@ struct AccountUsageSnapshot: Codable, Hashable, Sendable {
     }
 }
 
+struct CodexAccountProfile: Codable, Hashable, Sendable {
+    let kind: String
+    let email: String?
+    let planType: String?
+}
+
+struct CodexRateLimitWindow: Codable, Hashable, Sendable {
+    let usedPercent: Int
+    let windowDurationMins: Int?
+    let resetsAt: Int?
+
+    var resetDate: Date? {
+        resetsAt.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+    }
+}
+
+struct CodexCreditsSnapshot: Codable, Hashable, Sendable {
+    let hasCredits: Bool
+    let unlimited: Bool
+    let balance: String?
+}
+
+struct CodexSpendControlSnapshot: Codable, Hashable, Sendable {
+    let limit: String
+    let remainingPercent: Int
+    let resetsAt: Int
+    let used: String
+}
+
+struct CodexRateLimitBucket: Codable, Hashable, Sendable {
+    let credits: CodexCreditsSnapshot?
+    let individualLimit: CodexSpendControlSnapshot?
+    let limitId: String?
+    let limitName: String?
+    let planType: String?
+    let primary: CodexRateLimitWindow?
+    let rateLimitReachedType: String?
+    let secondary: CodexRateLimitWindow?
+    let spendControlReached: Bool?
+}
+
+struct CodexRateLimitResetCredit: Codable, Hashable, Sendable {
+    let description: String?
+    let expiresAt: Int?
+    let grantedAt: Int
+    let id: String
+    let resetType: String
+    let status: String
+    let title: String?
+
+    var expirationDate: Date? {
+        expiresAt.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+    }
+}
+
+struct CodexRateLimitResetCreditsSummary: Codable, Hashable, Sendable {
+    let availableCount: Int
+    let credits: [CodexRateLimitResetCredit]?
+}
+
+struct CodexRateLimitsSnapshot: Decodable, Hashable, Sendable {
+    let rateLimits: CodexRateLimitBucket
+    let rateLimitsByLimitId: [String: CodexRateLimitBucket]?
+    let rateLimitResetCredits: CodexRateLimitResetCreditsSummary?
+    var fetchedAt: Date
+
+    private enum CodingKeys: String, CodingKey {
+        case rateLimits
+        case rateLimitsByLimitId
+        case rateLimitResetCredits
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        rateLimits = try container.decode(
+            CodexRateLimitBucket.self,
+            forKey: .rateLimits
+        )
+        rateLimitsByLimitId = try container.decodeIfPresent(
+            [String: CodexRateLimitBucket].self,
+            forKey: .rateLimitsByLimitId
+        )
+        rateLimitResetCredits = try container.decodeIfPresent(
+            CodexRateLimitResetCreditsSummary.self,
+            forKey: .rateLimitResetCredits
+        )
+        fetchedAt = Date()
+    }
+
+    var preferredBucket: CodexRateLimitBucket {
+        if
+            let codex = rateLimitsByLimitId?["codex"]
+                ?? rateLimitsByLimitId?.first(where: {
+                    $0.key.localizedCaseInsensitiveContains("codex")
+                })?.value
+        {
+            return codex
+        }
+        return rateLimits
+    }
+}
+
 struct CodexModelInfo: Codable, Hashable, Sendable {
     let id: String?
     let model: String?
@@ -721,6 +823,20 @@ struct CodexModelInfo: Codable, Hashable, Sendable {
 struct CodexAccountResult: Sendable {
     let usage: AccountUsageSnapshot
     let models: [CodexModelInfo]
+    let profile: CodexAccountProfile?
+    let rateLimits: CodexRateLimitsSnapshot?
+
+    init(
+        usage: AccountUsageSnapshot,
+        models: [CodexModelInfo],
+        profile: CodexAccountProfile? = nil,
+        rateLimits: CodexRateLimitsSnapshot? = nil
+    ) {
+        self.usage = usage
+        self.models = models
+        self.profile = profile
+        self.rateLimits = rateLimits
+    }
 }
 
 struct LocalScanResult: Sendable {

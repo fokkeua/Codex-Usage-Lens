@@ -23,12 +23,16 @@ enum CodexCommandLocator {
 
 enum CodexAppServerClient {
     static let responseTimeout: TimeInterval = 20
-    static let optionalModelsGracePeriod: TimeInterval = 0.5
+    static let optionalMetadataGracePeriod: TimeInterval = 2
     static let maximumDailyUsageBuckets = 10_000
     static let maximumModelCount = 100
     static let maximumModelStringBytes = UsageLimits.maximumModelBytes
     static let maximumAccountCounter = UsageLimits.maximumTokenCount
     static let maximumDateStringBytes = 64
+    static let maximumEmailBytes = 512
+    static let maximumRateLimitBuckets = 100
+    static let maximumResetCredits = 1_000
+    static let maximumRateLimitStringBytes = 4 * 1024
 
     static func initializeRequest() -> [String: Any] {
         [
@@ -38,7 +42,7 @@ enum CodexAppServerClient {
                 "clientInfo": [
                     "name": "codex_usage_lens",
                     "title": "Codex Usage Lens",
-                    "version": "1.2.0",
+                    "version": "1.3.0",
                 ],
             ],
         ]
@@ -122,6 +126,178 @@ enum CodexAppServerClient {
         } catch {
             throw CodexAppServerError.invalidResponse
         }
+    }
+
+    static func decodeAccountProfile(
+        from object: Any
+    ) throws -> CodexAccountProfile? {
+        guard
+            let result = object as? [String: Any],
+            result["requiresOpenaiAuth"] is Bool
+        else {
+            throw CodexAppServerError.invalidResponse
+        }
+        guard let accountValue = result["account"] else {
+            return nil
+        }
+        if accountValue is NSNull {
+            return nil
+        }
+        guard
+            let account = accountValue as? [String: Any],
+            let kind = account["type"] as? String,
+            kind.utf8.count <= maximumRateLimitStringBytes
+        else {
+            throw CodexAppServerError.invalidResponse
+        }
+
+        let email: String?
+        let planType: String?
+        if kind == "chatgpt" {
+            guard
+                account.keys.contains("email"),
+                let rawPlanType = account["planType"] as? String,
+                rawPlanType.utf8.count <= maximumRateLimitStringBytes
+            else {
+                throw CodexAppServerError.invalidResponse
+            }
+            if account["email"] is NSNull {
+                email = nil
+            } else {
+                guard
+                    let rawEmail = account["email"] as? String,
+                    rawEmail.utf8.count <= maximumEmailBytes
+                else {
+                    throw CodexAppServerError.invalidResponse
+                }
+                email = rawEmail
+            }
+            planType = rawPlanType
+        } else {
+            email = nil
+            planType = nil
+        }
+        return CodexAccountProfile(
+            kind: kind,
+            email: email,
+            planType: planType
+        )
+    }
+
+    static func decodeRateLimits(
+        from object: Any,
+        fetchedAt: Date = Date()
+    ) throws -> CodexRateLimitsSnapshot {
+        do {
+            guard JSONSerialization.isValidJSONObject(object) else {
+                throw CodexAppServerError.invalidResponse
+            }
+            let data = try JSONSerialization.data(withJSONObject: object)
+            var snapshot = try JSONDecoder().decode(
+                CodexRateLimitsSnapshot.self,
+                from: data
+            )
+            snapshot.fetchedAt = fetchedAt
+            try validate(rateLimits: snapshot)
+            return snapshot
+        } catch let error as CodexAppServerError {
+            throw error
+        } catch {
+            throw CodexAppServerError.invalidResponse
+        }
+    }
+
+    private static func validate(
+        rateLimits snapshot: CodexRateLimitsSnapshot
+    ) throws {
+        guard
+            (snapshot.rateLimitsByLimitId?.count ?? 0)
+                <= maximumRateLimitBuckets,
+            snapshot.rateLimitsByLimitId?.keys.allSatisfy({
+                $0.utf8.count <= maximumRateLimitStringBytes
+            }) ?? true
+        else {
+            throw CodexAppServerError.invalidResponse
+        }
+
+        var buckets = [snapshot.rateLimits]
+        if let values = snapshot.rateLimitsByLimitId?.values {
+            buckets.append(contentsOf: values)
+        }
+        for bucket in buckets {
+            try validate(rateLimitBucket: bucket)
+        }
+
+        if let resetCredits = snapshot.rateLimitResetCredits {
+            guard
+                (0...1_000_000).contains(resetCredits.availableCount),
+                (resetCredits.credits?.count ?? 0) <= maximumResetCredits
+            else {
+                throw CodexAppServerError.invalidResponse
+            }
+            for credit in resetCredits.credits ?? [] {
+                guard
+                    credit.id.utf8.count <= maximumRateLimitStringBytes,
+                    credit.resetType.utf8.count
+                        <= maximumRateLimitStringBytes,
+                    credit.status.utf8.count
+                        <= maximumRateLimitStringBytes,
+                    (credit.title?.utf8.count ?? 0)
+                        <= maximumRateLimitStringBytes,
+                    (credit.description?.utf8.count ?? 0)
+                        <= maximumRateLimitStringBytes,
+                    plausibleEpoch(credit.grantedAt),
+                    credit.expiresAt.map(plausibleEpoch) ?? true
+                else {
+                    throw CodexAppServerError.invalidResponse
+                }
+            }
+        }
+    }
+
+    private static func validate(
+        rateLimitBucket bucket: CodexRateLimitBucket
+    ) throws {
+        let strings = [
+            bucket.limitId,
+            bucket.limitName,
+            bucket.planType,
+            bucket.rateLimitReachedType,
+            bucket.credits?.balance,
+            bucket.individualLimit?.limit,
+            bucket.individualLimit?.used,
+        ]
+        guard strings.compactMap({ $0 }).allSatisfy({
+            $0.utf8.count <= maximumRateLimitStringBytes
+        }) else {
+            throw CodexAppServerError.invalidResponse
+        }
+
+        for window in [bucket.primary, bucket.secondary].compactMap({ $0 }) {
+            guard
+                (0...100).contains(window.usedPercent),
+                window.windowDurationMins.map({
+                    (1...60 * 24 * 366).contains($0)
+                }) ?? true,
+                window.resetsAt.map(plausibleEpoch) ?? true
+            else {
+                throw CodexAppServerError.invalidResponse
+            }
+        }
+        if let spend = bucket.individualLimit {
+            guard
+                (0...100).contains(spend.remainingPercent),
+                plausibleEpoch(spend.resetsAt)
+            else {
+                throw CodexAppServerError.invalidResponse
+            }
+        }
+    }
+
+    private static func plausibleEpoch(_ value: Int) -> Bool {
+        UsageLimits.isPlausibleTimestamp(
+            Date(timeIntervalSince1970: TimeInterval(value))
+        )
     }
 
     private static func validate(summary: AccountUsageSummary) throws {
@@ -231,16 +407,16 @@ enum CodexAppServerClient {
             throw CodexAppServerError.launchFailed(error.localizedDescription)
         }
 
-        // account/usage/read and model/list are on the documented stable
-        // surface. Omitting capabilities keeps experimental methods disabled.
+        // These account methods are generated in the stable app-server schema.
+        // Omitting capabilities keeps unrelated experimental methods disabled.
         state.send(initializeRequest())
 
         let usageWait = state.usageFinished.wait(
             timeout: .now() + responseTimeout
         )
         if usageWait == .success {
-            _ = state.modelsFinished.wait(
-                timeout: .now() + optionalModelsGracePeriod
+            _ = state.metadataFinished.wait(
+                timeout: .now() + optionalMetadataGracePeriod
             )
         }
 
@@ -259,7 +435,12 @@ enum CodexAppServerClient {
         guard let usage = snapshot.usage else {
             throw CodexAppServerError.invalidResponse
         }
-        return CodexAccountResult(usage: usage, models: snapshot.models)
+        return CodexAccountResult(
+            usage: usage,
+            models: snapshot.models,
+            profile: snapshot.profile,
+            rateLimits: snapshot.rateLimits
+        )
     }
 }
 
@@ -270,6 +451,7 @@ final class AppServerState: @unchecked Sendable {
 
     let usageFinished = DispatchSemaphore(value: 0)
     let modelsFinished = DispatchSemaphore(value: 0)
+    let metadataFinished = DispatchSemaphore(value: 0)
     private let lock = NSLock()
     private let input: FileHandle
     private let executablePath: String
@@ -278,9 +460,14 @@ final class AppServerState: @unchecked Sendable {
     private var initialized = false
     private var usageDidFinish = false
     private var modelsDidFinish = false
+    private var profileDidFinish = false
+    private var rateLimitsDidFinish = false
+    private var metadataDidFinish = false
 
     private(set) var usage: AccountUsageSnapshot?
     private(set) var models: [CodexModelInfo] = []
+    private(set) var profile: CodexAccountProfile?
+    private(set) var rateLimits: CodexRateLimitsSnapshot?
     private(set) var error: Error?
 
     init(input: FileHandle, executablePath: String) {
@@ -360,17 +547,22 @@ final class AppServerState: @unchecked Sendable {
             modelsDidFinish = true
             modelsFinished.signal()
         }
+        profileDidFinish = true
+        rateLimitsDidFinish = true
+        signalMetadataIfCompleteLocked()
         lock.unlock()
     }
 
     func snapshot() -> (
         usage: AccountUsageSnapshot?,
         models: [CodexModelInfo],
+        profile: CodexAccountProfile?,
+        rateLimits: CodexRateLimitsSnapshot?,
         error: Error?
     ) {
         lock.lock()
         defer { lock.unlock() }
-        return (usage, models, error)
+        return (usage, models, profile, rateLimits, error)
     }
 
     private func consumeLineLocked(_ data: Data) {
@@ -399,6 +591,12 @@ final class AppServerState: @unchecked Sendable {
                 "id": 2,
                 "params": ["includeHidden": false, "limit": 100],
             ])
+            send([
+                "method": "account/read",
+                "id": 3,
+                "params": ["refreshToken": false],
+            ])
+            send(["method": "account/rateLimits/read", "id": 4])
             return
         }
 
@@ -427,7 +625,39 @@ final class AppServerState: @unchecked Sendable {
             }
             modelsDidFinish = true
             modelsFinished.signal()
+            signalMetadataIfCompleteLocked()
+        } else if id == 3 {
+            guard !profileDidFinish else { return }
+            if let result = message["result"] {
+                profile = try? CodexAppServerClient.decodeAccountProfile(
+                    from: result
+                )
+            }
+            profileDidFinish = true
+            signalMetadataIfCompleteLocked()
+        } else if id == 4 {
+            guard !rateLimitsDidFinish else { return }
+            if let result = message["result"] {
+                rateLimits = try? CodexAppServerClient.decodeRateLimits(
+                    from: result
+                )
+            }
+            rateLimitsDidFinish = true
+            signalMetadataIfCompleteLocked()
         }
+    }
+
+    private func signalMetadataIfCompleteLocked() {
+        guard
+            !metadataDidFinish,
+            modelsDidFinish,
+            profileDidFinish,
+            rateLimitsDidFinish
+        else {
+            return
+        }
+        metadataDidFinish = true
+        metadataFinished.signal()
     }
 
     private func failLocked(_ failure: CodexAppServerError) {
@@ -442,6 +672,9 @@ final class AppServerState: @unchecked Sendable {
             modelsDidFinish = true
             modelsFinished.signal()
         }
+        profileDidFinish = true
+        rateLimitsDidFinish = true
+        signalMetadataIfCompleteLocked()
     }
 
     private func failLocked(_ failure: Error) {

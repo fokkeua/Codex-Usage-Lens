@@ -84,14 +84,19 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 final class AppLanguageController: ObservableObject {
     static let storageKey = "appLanguage"
     static let shared = AppLanguageController(
-        selectionOverride: (
-            ProcessInfo.processInfo.processName.contains("xctest")
-                || CommandLine.arguments.contains(where: {
-                    $0.contains(".xctest")
-                })
-                || NSClassFromString("XCTestCase") != nil
-                || NSClassFromString("XCTest.XCTestCase") != nil
-        ) ? .russian : nil
+        selectionOverride: {
+            if CommandLine.arguments.contains("--preview-menu") {
+                return .english
+            }
+            return (
+                ProcessInfo.processInfo.processName.contains("xctest")
+                    || CommandLine.arguments.contains(where: {
+                        $0.contains(".xctest")
+                    })
+                    || NSClassFromString("XCTestCase") != nil
+                    || NSClassFromString("XCTest.XCTestCase") != nil
+            ) ? .russian : nil
+        }()
     )
 
     @Published var selection: AppLanguage {

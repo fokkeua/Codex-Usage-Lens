@@ -176,10 +176,10 @@ for directory in Sources Tests Packaging scripts samples docs .github; do
     validate_safe_tree "$PROJECT_DIR/$directory" "source tree $directory"
 done
 for file in \
-    Package.swift README.md README.uk.md README.ru.md LICENSE CHANGELOG.md \
+    Package.swift README.md LICENSE CHANGELOG.md \
     CONTRIBUTING.md \
     CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md .gitignore .gitattributes \
-    Assets/CodexUsageLens-AppIcon.png; do
+    Assets/CodexUsageLens-AppIcon.png Assets/CodexUsageLens-Promo.png; do
     [[ -f "$PROJECT_DIR/$file" && ! -L "$PROJECT_DIR/$file" ]] \
         || fail "source file is missing or unsafe: $file"
     validate_safe_tree "$PROJECT_DIR/$file" "source file $file"
@@ -377,7 +377,7 @@ for directory in Sources Tests Packaging scripts samples docs .github; do
         "$SOURCE_STAGING_DIR/$directory"
 done
 for file in \
-    Package.swift README.md README.uk.md README.ru.md LICENSE CHANGELOG.md \
+    Package.swift README.md LICENSE CHANGELOG.md \
     CONTRIBUTING.md \
     CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md .gitignore .gitattributes; do
     ditto --norsrc "$PROJECT_DIR/$file" "$SOURCE_STAGING_DIR/$file"
@@ -385,6 +385,8 @@ done
 mkdir "$SOURCE_STAGING_DIR/Assets"
 ditto --norsrc "$PROJECT_DIR/Assets/CodexUsageLens-AppIcon.png" \
     "$SOURCE_STAGING_DIR/Assets/CodexUsageLens-AppIcon.png"
+ditto --norsrc "$PROJECT_DIR/Assets/CodexUsageLens-Promo.png" \
+    "$SOURCE_STAGING_DIR/Assets/CodexUsageLens-Promo.png"
 
 # Revalidate the materialized staging tree immediately before zip. `-y`
 # additionally prevents zip from dereferencing a symlink introduced during the

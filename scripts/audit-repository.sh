@@ -25,15 +25,10 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
 [[ -n "$(git ls-files)" ]] || fail "the repository has no tracked files"
 
 for required_file in \
-    README.md README.uk.md README.ru.md LICENSE CHANGELOG.md CONTRIBUTING.md \
+    README.md LICENSE CHANGELOG.md CONTRIBUTING.md \
     CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md Package.swift \
     docs/PRIVACY.md docs/RELEASING.md \
-    docs/screenshots/en/main-interface.png \
-    docs/screenshots/en/dashboard.png \
-    docs/screenshots/uk/main-interface.png \
-    docs/screenshots/uk/dashboard.png \
-    docs/screenshots/ru/main-interface.png \
-    docs/screenshots/ru/dashboard.png \
+    Assets/CodexUsageLens-Promo.png \
     .github/workflows/ci.yml; do
     git ls-files --error-unmatch "$required_file" >/dev/null 2>&1 \
         || fail "required public file is not tracked: $required_file"
@@ -105,7 +100,7 @@ for pattern in "${identity_patterns[@]}"; do
     fi
 done
 
-for screenshot in docs/screenshots/{en,uk,ru}/{main-interface,dashboard}.png; do
+for screenshot in Assets/CodexUsageLens-Promo.png; do
     screenshot_metadata="$(strings "$screenshot")"
     for pattern in "${secret_patterns[@]}" "${identity_patterns[@]}"; do
         if print -r -- "$screenshot_metadata" | grep -E -q -- "$pattern"; then
@@ -126,12 +121,6 @@ app_build="$(plutil -extract CFBundleVersion raw Packaging/Info.plist)"
 grep -F "Current version: **$app_version (build $app_build)**." \
     README.md >/dev/null \
     || fail "README.md version does not match Packaging/Info.plist"
-grep -F "Текущая версия: **$app_version (build $app_build)**." \
-    README.ru.md >/dev/null \
-    || fail "README.ru.md version does not match Packaging/Info.plist"
-grep -F "Поточна версія: **$app_version (build $app_build)**." \
-    README.uk.md >/dev/null \
-    || fail "README.uk.md version does not match Packaging/Info.plist"
 
 zsh -n scripts/*.sh
 swift package dump-package >/dev/null

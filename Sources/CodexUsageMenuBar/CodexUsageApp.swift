@@ -14,6 +14,11 @@ struct CodexUsageApp: App {
             }
         }
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button(L10n.string("О Codex Usage Lens")) {
+                    appDelegate.showAbout()
+                }
+            }
             CommandGroup(replacing: .appSettings) {
                 Button(L10n.string("settings.command")) {
                     appDelegate.showSettings()

@@ -31,6 +31,45 @@ func statusItemAccessibilityActivationDefaultsToPopover() {
     #expect(AppDelegate.statusItemAction(for: nil) == .togglePopover)
 }
 
+@Test("Тема приложения по умолчанию следует системе")
+@MainActor
+func applicationAppearanceDefaultsToSystem() {
+    #expect(AppDelegate.previewAppearance(arguments: ["app"]) == nil)
+    #expect(
+        AppDelegate.previewAppearance(
+            arguments: ["app", "--preview-light"]
+        ) == .light
+    )
+    #expect(
+        AppDelegate.previewAppearance(
+            arguments: ["app", "--preview-dark"]
+        ) == .dark
+    )
+}
+
+@Test("Панель открывается справа от значка и не выходит за экран")
+@MainActor
+func statusPanelUsesRightSideAnchor() {
+    let visibleFrame = NSRect(x: 0, y: 0, width: 1_000, height: 800)
+    let centeredButton = NSRect(x: 100, y: 760, width: 24, height: 24)
+    #expect(
+        AppDelegate.statusPanelOriginX(
+            buttonFrame: centeredButton,
+            panelWidth: 360,
+            visibleFrame: visibleFrame
+        ) == 130
+    )
+
+    let edgeButton = NSRect(x: 940, y: 760, width: 24, height: 24)
+    #expect(
+        AppDelegate.statusPanelOriginX(
+            buttonFrame: edgeButton,
+            panelWidth: 360,
+            visibleFrame: visibleFrame
+        ) == 632
+    )
+}
+
 @Test("Dock отображается только пока открыто управляемое окно")
 @MainActor
 func dockActivationPolicyTracksManagedWindows() {
@@ -49,15 +88,33 @@ func dockActivationPolicyTracksManagedWindows() {
     #expect(
         AppDelegate.activationPolicy(
             hasDashboardWindow: false,
-            hasSettingsWindow: true
+            hasSettingsWindow: true,
+            hasAboutWindow: false
         ) == .regular
     )
     #expect(
         AppDelegate.activationPolicy(
             hasDashboardWindow: true,
-            hasSettingsWindow: true
+            hasSettingsWindow: true,
+            hasAboutWindow: false
         ) == .regular
     )
+    #expect(
+        AppDelegate.activationPolicy(
+            hasDashboardWindow: false,
+            hasSettingsWindow: false,
+            hasAboutWindow: true
+        ) == .regular
+    )
+}
+
+@Test("Ссылки About ведут на публичные страницы репозитория")
+func aboutLinksUseSecureRepositoryDestinations() {
+    for destination in AboutDestination.allCases {
+        #expect(destination.url.scheme == "https")
+        #expect(destination.url.host == "github.com")
+        #expect(destination.url.path.contains("Codex-Usage-Lens"))
+    }
 }
 
 @Test("Окно настроек можно уменьшать без горизонтальной прокрутки цен")
